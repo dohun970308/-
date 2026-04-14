@@ -142,23 +142,35 @@ export default function AdminCarEditPage() {
     const newUrls: string[] = [];
 
     for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop();
-      const filePath = `cars/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      try {
+        const ext = file.name.split(".").pop() || "jpg";
+        const filePath = `cars/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-      const { error } = await supabase.storage
-        .from("car-images")
-        .upload(filePath, file);
+        console.log(`업로드 시작: ${file.name} (${file.size} bytes) -> ${filePath}`);
 
-      if (error) {
-        console.error("이미지 업로드 실패:", error.message);
-        alert(`이미지 업로드 실패: ${error.message}`);
-        continue;
+        const { data, error } = await supabase.storage
+          .from("car-images")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (error) {
+          console.error("업로드 실패:", { message: error.message, name: error.name, cause: error });
+          alert(`이미지 업로드 실패: ${error.message}`);
+          continue;
+        }
+
+        console.log("업로드 성공:", data.path);
+        const { data: urlData } = supabase.storage
+          .from("car-images")
+          .getPublicUrl(filePath);
+        console.log("Public URL:", urlData.publicUrl);
+        newUrls.push(urlData.publicUrl);
+      } catch (err) {
+        console.error("업로드 예외:", err);
+        alert(`업로드 중 오류: ${err instanceof Error ? err.message : String(err)}`);
       }
-
-      const { data: urlData } = supabase.storage
-        .from("car-images")
-        .getPublicUrl(filePath);
-      newUrls.push(urlData.publicUrl);
     }
 
     setImages((prev) => [...prev, ...newUrls]);
