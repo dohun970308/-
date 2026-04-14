@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "공지사항 | 리레브",
   description: "리레브 프리미엄 중고차 구독 서비스 공지사항",

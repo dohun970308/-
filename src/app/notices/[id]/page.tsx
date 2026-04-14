@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
+export const dynamic = "force-dynamic";
+
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   const y = date.getFullYear();
