@@ -27,28 +27,46 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword(
-        { email, password }
-      );
-
-      if (authError) {
-        setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      if (!supabase) {
+        setError("Supabase 클라이언트가 초기화되지 않았습니다. 환경변수를 확인하세요.");
+        console.error("supabase client is null - check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
+        setLoading(false);
         return;
       }
 
-      if (data.session) {
-        document.cookie = `admin-token=${data.session.access_token}; path=/; max-age=86400`;
-        router.push("/admin/cars");
+      console.log("Attempting login with email:", email);
+
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        console.error("Supabase auth error:", authError.message, authError);
+        setError(`로그인 실패: ${authError.message}`);
+        setLoading(false);
+        return;
       }
-    } catch {
-      setError("로그인 중 오류가 발생했습니다.");
+
+      console.log("Login successful, session:", data.session ? "exists" : "null");
+
+      if (data.session) {
+        document.cookie = `admin-token=${data.session.access_token}; path=/; max-age=86400; SameSite=Lax`;
+        router.push("/admin/cars");
+      } else {
+        setError("세션을 가져올 수 없습니다. 다시 시도해주세요.");
+        console.error("No session returned after successful auth");
+      }
+    } catch (err) {
+      console.error("Login exception:", err);
+      setError(`로그인 중 오류: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">관리자 로그인</CardTitle>
@@ -79,7 +97,9 @@ export default function AdminLoginPage() {
               />
             </div>
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </p>
             )}
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "로그인 중..." : "로그인"}
