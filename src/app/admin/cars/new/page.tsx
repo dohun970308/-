@@ -111,12 +111,16 @@ export default function AdminCarNewPage() {
         .from("car-images")
         .upload(filePath, file);
 
-      if (!error) {
-        const { data: urlData } = supabase.storage
-          .from("car-images")
-          .getPublicUrl(filePath);
-        newUrls.push(urlData.publicUrl);
+      if (error) {
+        console.error("이미지 업로드 실패:", error.message);
+        alert(`이미지 업로드 실패: ${error.message}`);
+        continue;
       }
+
+      const { data: urlData } = supabase.storage
+        .from("car-images")
+        .getPublicUrl(filePath);
+      newUrls.push(urlData.publicUrl);
     }
 
     setImages((prev) => [...prev, ...newUrls]);
