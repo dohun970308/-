@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 리레브 - 프리미엄 중고차 구독 서비스
 
-## Getting Started
+중고차 구독/렌트 서비스 웹사이트입니다.
 
-First, run the development server:
+## 기술 스택
+
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Supabase (DB + Storage + Auth)
+
+## 실행 방법
 
 ```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 에서 확인
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 환경변수
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`.env.local` 파일에 다음 변수를 설정하세요:
 
-## Learn More
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_KAKAO_CHANNEL_URL=http://pf.kakao.com/_mzxkxcn/chat
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 페이지 구성
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| 경로 | 설명 |
+|------|------|
+| `/` | 메인 페이지 - 히어로 배너, 브랜드 필터, 차량 목록 |
+| `/cars/[id]` | 차량 상세 - 이미지 갤러리, 차량 정보, 문의 버튼 |
+| `/notices` | 공지사항 목록 |
+| `/notices/[id]` | 공지 상세 |
+| `/admin/login` | 관리자 로그인 |
+| `/admin/cars` | 차량 관리 (CRUD) |
+| `/admin/cars/new` | 차량 등록 |
+| `/admin/cars/[id]/edit` | 차량 수정 |
+| `/admin/notices` | 공지사항 관리 (CRUD) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 관리자 계정
 
-## Deploy on Vercel
+Supabase Authentication에서 이메일/비밀번호 사용자를 생성한 후 `/admin/login`에서 로그인하세요.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Supabase 설정
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- DB 테이블: `cars`, `notices`
+- Storage 버킷: `car-images` (public)
+- RLS 정책 적용 완료
+
+## 배포
+
+Vercel에 배포 시 환경변수를 설정하면 바로 배포 가능합니다.

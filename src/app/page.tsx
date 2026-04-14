@@ -1,101 +1,132 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import HeroBanner from "@/components/HeroBanner";
+import CarCard from "@/components/CarCard";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import type { Car } from "@/types";
+
+const brands = [
+  "전체",
+  "BMW",
+  "Mercedes-Benz",
+  "Audi",
+  "Hyundai",
+  "Kia",
+  "Genesis",
+  "Tesla",
+  "MINI",
+];
+
+function SkeletonCard() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <Card className="overflow-hidden">
+      <div className="aspect-[16/10] w-full animate-pulse bg-secondary" />
+      <div className="space-y-3 px-4 pb-4 pt-3">
+        <div className="h-4 w-3/4 animate-pulse rounded bg-secondary" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-secondary" />
+        <div className="h-5 w-1/3 animate-pulse rounded bg-secondary" />
+      </div>
+    </Card>
+  );
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+export default function HomePage() {
+  const [cars, setCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBrand, setSelectedBrand] = useState("전체");
+  const [serviceFilter, setServiceFilter] = useState("전체");
+
+  useEffect(() => {
+    async function fetchCars() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("cars")
+        .select("*")
+        .eq("is_visible", true)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setCars(data as Car[]);
+      }
+      setLoading(false);
+    }
+    fetchCars();
+  }, []);
+
+  const filteredCars = cars.filter((car) => {
+    const brandMatch = selectedBrand === "전체" || car.brand === selectedBrand;
+    const serviceMatch =
+      serviceFilter === "전체" ||
+      (serviceFilter === "구독" && car.service_type === "subscription") ||
+      (serviceFilter === "렌트" && car.service_type === "rent");
+    return brandMatch && serviceMatch;
+  });
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+
+      <main className="flex-1">
+        <HeroBanner />
+
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          {/* Service type tabs */}
+          <Tabs defaultValue="전체" onValueChange={setServiceFilter}>
+            <TabsList>
+              <TabsTrigger value="전체">전체</TabsTrigger>
+              <TabsTrigger value="구독">구독</TabsTrigger>
+              <TabsTrigger value="렌트">렌트</TabsTrigger>
+            </TabsList>
+
+            {/* Brand filter */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {brands.map((brand) => (
+                <Button
+                  key={brand}
+                  variant={selectedBrand === brand ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedBrand(brand)}
+                >
+                  {brand}
+                </Button>
+              ))}
+            </div>
+
+            {/* Car grid - shared across all tabs */}
+            {["전체", "구독", "렌트"].map((tab) => (
+              <TabsContent key={tab} value={tab} className="mt-6">
+                {loading ? (
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <SkeletonCard key={i} />
+                    ))}
+                  </div>
+                ) : filteredCars.length === 0 ? (
+                  <div className="flex min-h-[200px] items-center justify-center">
+                    <p className="text-muted-foreground">
+                      조건에 맞는 차량이 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredCars.map((car) => (
+                      <CarCard key={car.id} car={car} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <Footer />
     </div>
   );
 }
