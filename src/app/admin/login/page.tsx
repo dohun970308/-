@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,39 +26,24 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      if (!supabase) {
-        setError("Supabase 클라이언트가 초기화되지 않았습니다. 환경변수를 확인하세요.");
-        console.error("supabase client is null - check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
-        setLoading(false);
-        return;
-      }
-
-      console.log("Attempting login with email:", email);
-
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (authError) {
-        console.error("Supabase auth error:", authError.message, authError);
-        setError(`로그인 실패: ${authError.message}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "로그인에 실패했습니다.");
         setLoading(false);
         return;
       }
 
-      console.log("Login successful, session:", data.session ? "exists" : "null");
-
-      if (data.session) {
-        document.cookie = `admin-token=${data.session.access_token}; path=/; max-age=86400; SameSite=Lax`;
-        router.push("/admin/cars");
-      } else {
-        setError("세션을 가져올 수 없습니다. 다시 시도해주세요.");
-        console.error("No session returned after successful auth");
-      }
+      router.push("/admin/cars");
     } catch (err) {
-      console.error("Login exception:", err);
-      setError(`로그인 중 오류: ${err instanceof Error ? err.message : String(err)}`);
+      console.error("Login error:", err);
+      setError("서버 연결에 실패했습니다.");
     } finally {
       setLoading(false);
     }

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CarIcon, MegaphoneIcon, MenuIcon, XIcon, LogOutIcon } from "lucide-react";
@@ -28,8 +27,7 @@ export default function AdminLayout({
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    document.cookie = "admin-token=; path=/; max-age=0";
+    await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
   };
 
