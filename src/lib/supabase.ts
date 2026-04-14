@@ -1,34 +1,14 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-let _client: SupabaseClient | null = null;
+// NEXT_PUBLIC_ 값은 빌드 시 인라인됨
+// Vercel에서 환경변수 미설정 시에도 동작하도록 기본값 지정
+// anon key는 공개용이므로 코드에 포함해도 안전
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://fhrnzwilzvedkfsywerr.supabase.co";
 
-function getClient(): SupabaseClient {
-  if (_client) return _client;
+const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZocm56d2lsenZlZGtmc3l3ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxMjkyNTIsImV4cCI6MjA5MTcwNTI1Mn0.kIcI7knJqHbwUq4p5EUoMtzFNFgHBj6NCLaZyquyJXY";
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    // 빌드 시 환경변수 없음 → 실제 프로퍼티 접근 시 에러
-    // force-dynamic 덕분에 빌드 중에는 절대 호출되지 않음
-    return new Proxy({} as any, {
-      get(_, prop) {
-        if (prop === "then" || prop === Symbol.toPrimitive) return undefined;
-        throw new Error(
-          `Supabase not configured (accessed .${String(prop)})`
-        );
-      },
-    });
-  }
-
-  _client = createClient(url, key);
-  return _client;
-}
-
-// 모듈 로드 시점에 createClient를 호출하지 않음 (지연 평가)
-// 기존 코드의 import { supabase } 그대로 호환
-export const supabase = new Proxy({} as any, {
-  get(_, prop) {
-    return getClient()[prop as keyof SupabaseClient];
-  },
-}) as SupabaseClient;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
